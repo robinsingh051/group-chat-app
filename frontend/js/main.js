@@ -50,7 +50,7 @@ chatForm.addEventListener("submit", async (e) => {
     msg: msg,
   });
   console.log(response.data);
-  outputMessage(response.data.msg, response.data.username);
+  outputMessage(response.data.msg);
 
   //clear input
   e.target.elements.msg.value = "";
@@ -58,10 +58,10 @@ chatForm.addEventListener("submit", async (e) => {
 });
 
 //output message to DOM
-function outputMessage(message, username) {
+function outputMessage(message) {
   const div = document.createElement("div");
   div.classList.add("message");
-  div.innerHTML = `<p class="meta">${username} <span>${message.createdAt}</span></p>
+  div.innerHTML = `<p class="meta">${message.name} <span>${message.createdAt}</span></p>
     <p class="text">
         ${message.msg}
     </p>`;
@@ -83,8 +83,15 @@ function outputUsers(userData) {
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     const users = await axios.get("http://localhost:3000/users/all");
+    console.log("users", users.data);
     for (let i = 0; i < users.data.length; i++) {
       outputUsers(users.data[i]);
+    }
+
+    const msgs = await axios.get("http://localhost:3000/msg/all");
+    console.log("msgs", msgs.data);
+    for (let i = 0; i < msgs.data.length; i++) {
+      outputMessage(msgs.data[i]);
     }
   } catch (err) {
     console.log(err);

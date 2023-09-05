@@ -18,9 +18,10 @@ app.use(bodyParser.json({ extended: false }));
 app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use("/users", userRoutes);
-app.use("/msg", authenticationMiddleware, msgRoutes);
+app.use("/msg", msgRoutes);
 
 User.hasMany(Msg);
+Msg.belongsTo(User);
 
 // Sync the database models
 sequelize

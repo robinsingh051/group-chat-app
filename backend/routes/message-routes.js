@@ -1,10 +1,14 @@
 const express = require("express");
 
 const msgController = require("../controllers/message-controller");
+const authenticationMiddleware = require("../util/authentication");
 
 const router = express.Router();
 
-// /users/mag => POST
-router.post("/", msgController.postmsg);
+// /msg/all => GET
+router.get("/all", msgController.getAllMsgs);
+
+// /msg => POST
+router.post("/", authenticationMiddleware, msgController.postmsg);
 
 module.exports = router;
