@@ -33,3 +33,31 @@ exports.postUsers = async (req, res, next) => {
       .json({ error: "User with this email already exists" });
   }
 };
+
+exports.getUser = async (req, res, next) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  console.log(email, password);
+  try {
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ error: "User not found", success: false });
+    }
+    const passwordMatched = await bcrypt.compare(password, user.password);
+    if (!passwordMatched) {
+      return res
+        .status(401)
+        .json({ error: "Incorrect password", success: false });
+    } else {
+      const token = jwt.sign(user.id, secretKey);
+      return res.status(200).json({
+        message: "User logged in successfully",
+        success: true,
+        token: token,
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "An error occurred" });
+  }
+};
