@@ -5,7 +5,7 @@ const secretKey = process.env.JWT_KEY;
 const User = require("../models/user");
 const sequelize = require("../util/database");
 
-exports.postUsers = async (req, res, next) => {
+exports.postUser = async (req, res, next) => {
   const name = req.body.name;
   const email = req.body.email;
   const password = req.body.password;
@@ -59,5 +59,14 @@ exports.getUser = async (req, res, next) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "An error occurred" });
+  }
+};
+
+exports.getAllUsers = async (req, res, next) => {
+  try {
+    const users = await User.findAll();
+    res.status(200).json(users);
+  } catch (err) {
+    res.status(500).json({ err: "server errror" });
   }
 };
