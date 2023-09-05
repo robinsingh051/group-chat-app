@@ -19,13 +19,14 @@
         <h1><i class="fas fa-smile"></i> Group Chat</h1>
       </header>
       <main class="join-main">
-        <form action="chat.html">
+        <form id="my-form">
+          <div class="msg"></div>
           <div class="form-control">
             <label for="username">Username</label>
             <input
               type="text"
-              name="username"
-              id="username"
+              name="name"
+              id="name"
               placeholder="Enter your name..."
               required
             />
@@ -60,9 +61,12 @@
               required
             />
           </div>
-          <button type="submit" class="btn">Sign Up</button>
+          <button type="submit" class="btn" value="Sign Up">Sign Up</button>
+          <a href="/login.html" type="button">Log In</a>
         </form>
       </main>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.min.js"></script>
+    <script src="./js/signup.js"></script>
   </body>
 </html>

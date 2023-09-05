@@ -190,3 +190,10 @@ a {
     display: none;
   }
 }
+
+.error {
+  background: orangered;
+  color: #fff;
+  padding: 5px;
+  margin: 5px;
+}
