@@ -65,7 +65,7 @@ function outputMessage(message) {
     <p class="text">
         ${message.msg}
     </p>`;
-  document.querySelector(".chat-messages").appendChild(div);
+  chatMessages.appendChild(div);
 }
 
 //Add room name to dom
@@ -97,3 +97,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log(err);
   }
 });
+
+setInterval(async () => {
+  try {
+    chatMessages.innerHTML = "";
+    const msgs = await axios.get("http://localhost:3000/msg/all");
+    console.log("msgs", msgs.data);
+    for (let i = 0; i < msgs.data.length; i++) {
+      outputMessage(msgs.data[i]);
+    }
+  } catch (err) {
+    console.log(err);
+  }
+}, 1000);

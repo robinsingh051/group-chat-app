@@ -30,8 +30,6 @@ exports.getAllMsgs = async (req, res, next) => {
       },
     });
 
-    console.log(messages);
-
     // Format the response
     const formattedMessages = messages.map((message) => ({
       name: message.user.name,
