@@ -1,6 +1,10 @@
+const path = require("path");
+const fs = require("fs");
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const morgan = require("morgan");
 require("dotenv").config();
 
 const sequelize = require("./util/database");
@@ -15,13 +19,26 @@ const userGroup = require("./models/userGroup");
 
 const app = express();
 
+const accessLogStream = fs.createWriteStream(
+  path.join(__dirname, "access.log"),
+  { flags: "a" }
+);
+
+app.use(express.static(path.join(__dirname, "public")));
 app.use(cors());
+app.use(morgan("combined", { stream: accessLogStream }));
 app.use(bodyParser.json({ extended: false }));
 app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use("/users", userRoutes);
 app.use("/msg", msgRoutes);
 app.use("/groups", groupRoutes);
+
+// any route
+app.use((req, res) => {
+  console.log(req.url);
+  res.sendFile(path.join(__dirname, `../public/${req.url}`));
+});
 
 User.hasMany(Msg);
 Msg.belongsTo(User);
