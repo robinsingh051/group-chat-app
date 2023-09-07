@@ -70,6 +70,11 @@ a {
   overflow-y: scroll;
 }
 
+/* selected group highlight */
+.selected {
+  background: #344ad8;
+}
+
 .chat-sidebar h2 {
   font-size: 20px;
   background: rgba(0, 0, 0, 0.1);

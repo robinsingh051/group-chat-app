@@ -1,8 +1,13 @@
 const chatForm = document.getElementById("chat-form");
 const chatMessages = document.querySelector(".chat-messages");
-// const roomName=document.getElementById('room-name');
 const userList = document.getElementById("users");
+const groupList = document.getElementById("groups");
+const addGroupBtn = document.getElementById("add-group");
+const addUserBtn = document.getElementById("add-user");
+const logoutbtn = document.getElementById("logoutbtn");
 const localStorageKey = "chatMessages";
+
+let groupId = -1;
 
 //retrieving token from local storage
 const token = localStorage.getItem("token");
@@ -10,8 +15,12 @@ const token = localStorage.getItem("token");
 if (!token) {
   window.location.href = "login.html";
 }
-console.log(token);
+// console.log(token);
 axios.defaults.headers.common["Authorization"] = `${token}`;
+
+logoutbtn.addEventListener("click", logout);
+addGroupBtn.addEventListener("click", addGroup);
+addUserBtn.addEventListener("click", addUser);
 
 // Function to save a chat message in local storage
 function saveMessageToLocalStorage(message) {
@@ -42,86 +51,77 @@ async function loadMessagesFromLocalStorage() {
   });
 }
 
-async function fetchUsersList() {
+async function fetchGroupList() {
+  //   try {
+  //     const users = await axios.get("http://localhost:3000/users/allusers");
+  //     console.log("users", users.data);
+  //     for (let i = 0; i < users.data.length; i++) {
+  //       outputUsers(users.data[i]);
+  //     }
+  //   } catch (err) {
+  //     console.log(err);
+  //   }
   try {
-    const users = await axios.get("http://localhost:3000/users/all");
-    console.log("users", users.data);
-    for (let i = 0; i < users.data.length; i++) {
-      outputUsers(users.data[i]);
+    const groups = await axios.get("http://localhost:3000/groups/all");
+    //console.log("groups", groups.data);
+    for (let i = 0; i < groups.data.length; i++) {
+      outputGroups(groups.data[i]);
     }
   } catch (err) {
     console.log(err);
   }
-  loadMessagesFromLocalStorage();
 }
 
 // Load messages from local storage when the page is refreshed
-window.addEventListener("load", fetchUsersList);
-
-//get username and room from url
-// const { username, room } = Qs.parse(location.search, {
-//   ignoreQueryPrefix: true,
-// });
-
-// const socket = io();
-
-// //join chatroom
-// socket.emit("joinRoom", { username, room });
-
-// //get room and users
-// socket.on("roomUsers", ({ room, users }) => {
-//   outputRoomName(room);
-//   outputUsers(users);
-// });
-
-// //Message from server
-// socket.on("message", (message) => {
-//   console.log(message);
-//   outputMessage(message);
-
-//   //scroll down
-//   chatMessages.scrollTop = chatMessages.scrollHeight;
-// });
+window.addEventListener("load", fetchGroupList);
 
 // Function to fetch messages from the server starting after the last message's ID
 async function fetchMessagesFromServer(lastMessageId) {
-  console.log(lastMessageId);
-  try {
-    const response = await axios.get(
-      `http://localhost:3000/msg/all?lastMessageId=${lastMessageId + 1}`
-    );
+  if (groupId !== -1) {
+    //console.log(lastMessageId);
+    try {
+      const response = await axios.get(
+        `http://localhost:3000/groups/${groupId}/msgs?lastMessageId=${
+          lastMessageId + 1
+        }`
+      );
 
-    const newMessages = response.data;
-    newMessages.forEach((message) => {
-      outputMessage(message);
-      saveMessageToLocalStorage(message);
-    });
-  } catch (err) {
-    console.log(err);
+      const newMessages = response.data;
+      newMessages.forEach((message) => {
+        outputMessage(message);
+        saveMessageToLocalStorage(message);
+      });
+    } catch (err) {
+      console.log(err);
+    }
   }
 }
 
 //message submit
 chatForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const msg = e.target.elements.msg.value;
-  console.log(msg);
+  if (groupId !== -1) {
+    const msg = e.target.elements.msg.value;
+    //console.log(msg);
 
-  //emit message to the server
-  //   socket.emit("chatMessage", msg);
+    const response = await axios.post(
+      `http://localhost:3000/groups/${groupId}/msgs`,
+      {
+        msg: msg,
+      }
+    );
+    //console.log(response.data);
+    outputMessage(response.data.msg);
 
-  const response = await axios.post(`http://localhost:3000/msg`, {
-    msg: msg,
-  });
-  console.log(response.data);
-  outputMessage(response.data.msg);
+    // Save the message to local storage
+    saveMessageToLocalStorage(response.data.msg);
 
-  // Save the message to local storage
-  saveMessageToLocalStorage(response.data.msg);
-
-  //clear input
-  e.target.elements.msg.value = "";
-  e.target.elements.msg.focus();
+    //clear input
+    e.target.elements.msg.value = "";
+    e.target.elements.msg.focus();
+  } else {
+    alert("Please select the group first");
+  }
 });
 
 //output message to DOM
@@ -135,29 +135,84 @@ function outputMessage(message) {
   chatMessages.appendChild(div);
 }
 
-//Add room name to dom
-// function outputRoomName(room) {
-//   roomName.innerText = room;
-// }
-
 //Add users to dom
 function outputUsers(userData) {
+  //console.log("userdata", userData);
   const user = document.createElement("li");
-  user.innerHTML = `<li>${userData.name}</li>`;
+  user.innerHTML = `<li id='${userData.id}'>${userData.name}</li>`;
   userList.appendChild(user);
 }
 
-// document.addEventListener("DOMContentLoaded", async () => {
-//   try {
-//     const msgs = await axios.get("http://localhost:3000/msg/all");
-//     console.log("msgs", msgs.data);
-//     for (let i = 0; i < msgs.data.length; i++) {
-//       outputMessage(msgs.data[i]);
-//     }
-//   } catch (err) {
-//     console.log(err);
-//   }
-// });
+function outputGroups(groupData) {
+  const group = document.createElement("li");
+  group.innerHTML = `<li id='${groupData.UserGroups[0].groupId}'>${groupData.name}</li>`;
+  group.addEventListener("click", loadUserForGroup);
+  groupList.appendChild(group);
+}
+
+// add group
+async function addGroup() {
+  const groupname = prompt("Please enter the name of group:");
+  if (groupname !== null) {
+    // User clicked "OK" and provided input
+    //console.log("group name:", groupname);
+    const newGroup = await axios.post(`http://localhost:3000/groups/addgroup`, {
+      groupname: groupname,
+    });
+    //console.log(newGroup.data);
+    outputGroups(newGroup.data);
+  } else {
+    // User clicked "Cancel" or closed the dialog
+    console.log("User canceled the input");
+  }
+}
+
+// add user to group
+async function addUser() {
+  if (groupId !== -1) {
+    const userEmail = prompt("Please enter the email id of user:");
+
+    if (userEmail !== null) {
+      // User clicked "OK" and provided input
+      //console.log("User Email:", userEmail);
+      try {
+        const newUser = await axios.post(
+          `http://localhost:3000/groups/${groupId}/adduser`,
+          {
+            userEmail: userEmail,
+          }
+        );
+        //console.log(newUser.data.user);
+        outputUsers(newUser.data.user);
+      } catch (err) {
+        alert("user does not exists");
+      }
+    } else {
+      // User clicked "Cancel" or closed the dialog
+      console.log("User canceled the input");
+    }
+  } else {
+    alert("please select the group first");
+  }
+}
+
+const loadUserForGroup = async (e) => {
+  localStorage.removeItem(localStorageKey);
+  chatMessages.innerHTML = "";
+  userList.innerHTML = "";
+  if (groupId !== -1)
+    document.getElementById(groupId).classList.remove("selected");
+  groupId = e.target.id;
+  e.target.classList.add("selected");
+  try {
+    const users = await axios.get(
+      `http://localhost:3000/groups/${groupId}/users`
+    );
+    for (let i = 0; i < users.data.length; i++) outputUsers(users.data[i]);
+  } catch (err) {
+    console.log(err);
+  }
+};
 
 // Periodically fetch new messages from the server (e.g., every 1 seconds)
 setInterval(() => {
@@ -166,9 +221,14 @@ setInterval(() => {
   const lastMessage = chatMessagesArray[chatMessagesArray.length - 1];
 
   // Use the last message's ID to fetch new messages from the server
-  console.log(lastMessage);
   const lastMessageId = lastMessage ? lastMessage.id : -1;
   fetchMessagesFromServer(lastMessageId);
-  //chatMessages.innerHTML = "";
-  //loadMessagesFromLocalStorage();
 }, 1000);
+
+//logout function
+function logout() {
+  axios.defaults.headers.common["Authorization"] = `${token}`;
+  localStorage.removeItem("token");
+  alert("You are logged out successfully");
+  window.location.href = "login.html";
+}
