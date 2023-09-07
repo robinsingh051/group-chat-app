@@ -1,3 +1,6 @@
+const { v4: uuidv4 } = require("uuid");
+const AWS = require("aws-sdk");
+
 const User = require("../models/user");
 const Msg = require("../models/message");
 const Group = require("../models/group");
@@ -248,4 +251,44 @@ exports.makeadmin = async (req, res, next) => {
   usergroup.isadmin = true;
   await usergroup.save();
   next();
+};
+
+exports.postmedia = async (req, res, next) => {
+  try {
+    const file = req.files.media;
+
+    if (!file) {
+      return res.status(400).json({ error: "No file was uploaded." });
+    }
+    const BUCKET_NAME = process.env.BUCKET_NAME;
+    const IAM_USER_KEY = process.env.IAM_USER_KEY;
+    const IAM_USER_SECRET = process.env.IAM_USER_SECRET;
+
+    let s3bucket = new AWS.S3({
+      accessKeyId: IAM_USER_KEY,
+      secretAccessKey: IAM_USER_SECRET,
+    });
+
+    const fileKey = `uploads/${uuidv4()}_${file.name}`;
+
+    const params = {
+      Bucket: BUCKET_NAME,
+      Key: fileKey,
+      Body: file.data,
+      ACL: "public-read",
+    };
+
+    // Upload the file to S3
+    const s3Response = await s3bucket.upload(params).promise();
+
+    // Capture the S3 URL from the response
+    const s3Url = s3Response.Location;
+    req.body.msg = s3Url;
+    next();
+  } catch (error) {
+    console.error("Error uploading file to S3:", error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while uploading the file to S3." });
+  }
 };

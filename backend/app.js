@@ -5,6 +5,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const morgan = require("morgan");
+const fileUpload = require("express-fileupload");
 require("dotenv").config();
 
 const sequelize = require("./util/database");
@@ -26,6 +27,7 @@ const accessLogStream = fs.createWriteStream(
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(cors());
+app.use(fileUpload());
 app.use(morgan("combined", { stream: accessLogStream }));
 app.use(bodyParser.json({ extended: false }));
 app.use(bodyParser.urlencoded({ extended: false }));

@@ -70,10 +70,63 @@ chatForm.addEventListener("submit", async (e) => {
 function outputMessage(message) {
   const div = document.createElement("div");
   div.classList.add("message");
-  div.innerHTML = `<p class="meta">${message.name} <span>${message.createdAt}</span></p>
-    <p class="text">
-        ${message.msg}
-    </p>`;
+
+  // Extract the file extension from the URL
+  const fileExtension = message.msg.split(".").pop().toLowerCase();
+  const isImage = ["jpg", "jpeg", "png", "gif"].includes(fileExtension);
+  const isAudio = ["mp3", "wav", "ogg"].includes(fileExtension);
+  const isVideo = ["mp4", "webm"].includes(fileExtension);
+
+  if (isImage) {
+    // If it's an image, create an image element
+    const img = document.createElement("img");
+    img.src = message.msg;
+    img.style.maxHeight = "200px";
+    img.style.maxWidth = "200px";
+    div.appendChild(img);
+
+    // Create a download link for the image
+    const downloadLink = document.createElement("a");
+    downloadLink.href = message.msg;
+    downloadLink.download = `image.${fileExtension}`;
+    downloadLink.textContent = "Download Image";
+    div.appendChild(downloadLink);
+  } else if (isAudio) {
+    // If it's audio, create an audio element
+    const audio = document.createElement("audio");
+    audio.controls = true;
+    audio.src = message.msg;
+    div.appendChild(audio);
+
+    // Create a download link for the audio
+    const downloadLink = document.createElement("a");
+    downloadLink.href = message.msg;
+    downloadLink.download = `audio.${fileExtension}`;
+    downloadLink.textContent = "Download Audio";
+    div.appendChild(downloadLink);
+  } else if (isVideo) {
+    // If it's a video, create a video element
+    const video = document.createElement("video");
+    video.controls = true;
+    video.src = message.msg;
+    video.style.maxHeight = "200px";
+    video.style.maxWidth = "200px";
+    div.appendChild(video);
+
+    // Create a download link for the video
+    const downloadLink = document.createElement("a");
+    downloadLink.href = message.msg;
+    downloadLink.download = `video.${fileExtension}`;
+    downloadLink.textContent = "Download Video";
+    div.appendChild(downloadLink);
+  } else {
+    // If it's not a recognized media type, display it as a text message
+    div.innerHTML = `<p class="meta">${message.name} <span>${message.createdAt}</span></p>
+      <p class="text">
+          ${message.msg}
+      </p>`;
+  }
+
   chatMessages.appendChild(div);
 }
 
@@ -251,3 +304,44 @@ async function getMessages() {
     });
   }
 }
+
+const fileInput = document.getElementById("fileInput");
+
+// Trigger file input when the anchor tag is clicked
+document.querySelector(".attach").addEventListener("click", () => {
+  if (groupId !== -1) {
+    fileInput.click();
+  } else {
+    alert("please select the group first");
+  }
+});
+
+// Handle selected files and send them to the server
+fileInput.addEventListener("change", async () => {
+  const files = fileInput.files;
+
+  // Check if files were selected
+  if (files.length > 0) {
+    const formData = new FormData();
+
+    formData.append("media", files[0]);
+    try {
+      const response = await axios.post(
+        `http://localhost:4000/groups/${groupId}/media`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data", // Set content type explicitly for FormData
+          },
+        }
+      );
+
+      // Handle the response as needed
+      console.log(response.data);
+      getMessages();
+    } catch (error) {
+      // Handle errors
+      console.error("Error uploading file:", error);
+    }
+  }
+});

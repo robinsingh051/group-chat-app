@@ -38,4 +38,12 @@ router.get("/all", authenticationMiddleware, groupController.getGroups);
 // /groups/:id/msgs => POST
 router.post("/:id/msgs", authenticationMiddleware, groupController.postmsg);
 
+// /groups/:id/media => POST
+router.post(
+  "/:id/media",
+  authenticationMiddleware,
+  groupController.postmedia,
+  groupController.postmsg
+);
+
 module.exports = router;
