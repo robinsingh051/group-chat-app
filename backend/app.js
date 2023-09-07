@@ -54,6 +54,9 @@ userGroup.belongsTo(Group);
 Group.hasMany(Msg);
 Msg.belongsTo(Group);
 
+const job = require("./jobs/cron");
+job.start();
+
 // Sync the database models
 sequelize
   .sync()
