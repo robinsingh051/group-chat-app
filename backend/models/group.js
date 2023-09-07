@@ -10,6 +10,10 @@ const Group = sequelize.define("group", {
     primaryKey: true,
   },
   name: Sequelize.STRING,
+  admin: {
+    type: Sequelize.STRING,
+    allowNull: false,
+  },
 });
 
 module.exports = Group;

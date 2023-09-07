@@ -136,10 +136,34 @@ function outputMessage(message) {
 }
 
 //Add users to dom
+function outputUsersFromGroup(userData) {
+  //console.log("userdata", userData);
+  console.log(userData);
+  const user = document.createElement("li");
+  if (userData.UserGroups[0].isadmin === true) {
+    user.innerHTML = `<li id='${userData.id}'>${userData.name} (Admin)</li><i class="fas fa-minus" id="${userData.id}"></i>`;
+  } else {
+    user.innerHTML = `<li id='${userData.id}'>${userData.name}</li><i class="fas fa-minus" id="${userData.id}"></i>`;
+  }
+  var iElement = user.getElementsByTagName("i");
+  var liElement = user.getElementsByTagName("li");
+  console.log(iElement[0]);
+  iElement[0].addEventListener("click", removeUser);
+  liElement[0].addEventListener("click", makeadmin);
+  userList.appendChild(user);
+}
+
+// after adding user to group
 function outputUsers(userData) {
   //console.log("userdata", userData);
+  console.log(userData);
   const user = document.createElement("li");
-  user.innerHTML = `<li id='${userData.id}'>${userData.name}</li>`;
+  user.innerHTML = `<li id='${userData.id}'>${userData.name}</li><i class="fas fa-minus" id="${userData.id}"></i>`;
+  var iElement = user.getElementsByTagName("i");
+  var liElement = user.getElementsByTagName("li");
+  console.log(iElement[0]);
+  iElement[0].addEventListener("click", removeUser);
+  liElement[0].addEventListener("click", makeadmin);
   userList.appendChild(user);
 }
 
@@ -171,18 +195,15 @@ async function addGroup() {
 async function addUser() {
   if (groupId !== -1) {
     const userEmail = prompt("Please enter the email id of user:");
-
     if (userEmail !== null) {
-      // User clicked "OK" and provided input
-      //console.log("User Email:", userEmail);
       try {
         const newUser = await axios.post(
-          `http://localhost:3000/groups/${groupId}/adduser`,
+          `http://localhost:3000/groups/${groupId}/user`,
           {
             userEmail: userEmail,
           }
         );
-        //console.log(newUser.data.user);
+        alert("User added successfully");
         outputUsers(newUser.data.user);
       } catch (err) {
         alert("user does not exists");
@@ -208,7 +229,8 @@ const loadUserForGroup = async (e) => {
     const users = await axios.get(
       `http://localhost:3000/groups/${groupId}/users`
     );
-    for (let i = 0; i < users.data.length; i++) outputUsers(users.data[i]);
+    for (let i = 0; i < users.data.length; i++)
+      outputUsersFromGroup(users.data[i]);
   } catch (err) {
     console.log(err);
   }
@@ -231,4 +253,58 @@ function logout() {
   localStorage.removeItem("token");
   alert("You are logged out successfully");
   window.location.href = "login.html";
+}
+
+async function removeUser(e) {
+  const confirmation = confirm("Are you sure to remove the selected user");
+  if (confirmation) {
+    try {
+      const result = await axios.delete(
+        `http://localhost:3000/groups/${groupId}/user`,
+        {
+          params: {
+            userId: e.target.id,
+          },
+        }
+      );
+      if (result.status === 200) e.target.parentNode.remove();
+    } catch (err) {
+      if (err.response && err.response.status === 406) {
+        alert("You can not remove yourself");
+      } else if (err.response && err.response.status === 405) {
+        alert("You are not an admin");
+      } else {
+        // Handle other errors here, e.g., network issues
+        console.error("An error occurred:", err);
+      }
+    }
+  }
+}
+
+async function makeadmin(e) {
+  const confirmation = confirm("Are you sure to make the selected user Admin");
+  if (confirmation) {
+    try {
+      const result = await axios.patch(
+        `http://localhost:3000/groups/${groupId}/makeadmin`,
+        {
+          userId: e.target.id,
+        }
+      );
+      if (result.status === 200) {
+        userList.innerHTML = "";
+        for (let i = 0; i < result.data.length; i++)
+          outputUsersFromGroup(result.data[i]);
+      }
+    } catch (err) {
+      if (err.response && err.response.status === 406) {
+        alert("You can not remove yourself");
+      } else if (err.response && err.response.status === 405) {
+        alert("You are not an admin");
+      } else {
+        // Handle other errors here, e.g., network issues
+        console.error("An error occurred:", err);
+      }
+    }
+  }
 }

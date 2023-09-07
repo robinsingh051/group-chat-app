@@ -10,14 +10,22 @@ exports.addUser = async (req, res, next) => {
   const groupId = req.params.id;
   const userEmail = req.body.userEmail;
   try {
-    const userToBeAdded = await User.findOne({ where: { email: userEmail } });
-    if (userToBeAdded == null) res.status(404).json({ err: "User not found" });
-    try {
-      await userGroup.create({ userId: userToBeAdded.id, groupId: groupId });
-      res.status(201).json({ user: userToBeAdded });
-    } catch (err) {
-      console.log(err);
-      res.status(500).json({ err: "Server error" });
+    const usergroup = await userGroup.findOne({
+      where: { userId: userId, groupId: groupId },
+    });
+    if (usergroup.isadmin == true) {
+      try {
+        const userToBeAdded = await User.findOne({
+          where: { email: userEmail },
+        });
+        await userGroup.create({ userId: userToBeAdded.id, groupId: groupId });
+        return res.status(201).json({ user: userToBeAdded });
+      } catch (err) {
+        console.log(err);
+        return res.status(404).json({ err: "User not found" });
+      }
+    } else {
+      return res.status(405).send("You are not admin");
     }
   } catch (err) {
     console.log(err);
@@ -33,12 +41,13 @@ exports.addGroup = async (req, res, next) => {
     const group = await Group.create(
       {
         name: groupname,
+        admin: req.user.name,
       },
       { transaction: t }
     );
     console.log(group.id);
     await userGroup.create(
-      { userId: userId, groupId: group.id },
+      { userId: userId, groupId: group.id, isadmin: true },
       { transaction: t }
     );
     await t.commit();
@@ -58,6 +67,7 @@ exports.getUsers = async (req, res, next) => {
       include: [
         {
           model: userGroup,
+          attributes: ["isadmin"],
           where: { groupId: groupId },
         },
       ],
@@ -151,4 +161,52 @@ exports.postmsg = async (req, res, next) => {
     console.log(err);
     return res.status(500).json({ error: "Some error occured" });
   }
+};
+
+exports.deleteUser = async (req, res, next) => {
+  const loggedInUserId = req.user.id;
+  const groupId = req.params.id;
+  const userIdToBeRemoved = req.query.userId;
+  console.log(loggedInUserId, groupId, userIdToBeRemoved);
+  if (loggedInUserId == userIdToBeRemoved)
+    res.status(406).json({ msg: "Can not remove yourself" });
+  else {
+    try {
+      const usergroup = await userGroup.findOne({
+        where: { userId: loggedInUserId, groupId: groupId },
+      });
+      if (usergroup.isadmin === true) {
+        try {
+          const usergroupToBeRemoved = await userGroup.findOne({
+            where: { userId: userIdToBeRemoved, groupId: groupId },
+          });
+          await usergroupToBeRemoved.destroy();
+          res.status(200).json({ msg: "Success" });
+        } catch (err) {
+          console.log(err);
+          res.status(500).json({ err: "Server error" });
+        }
+      } else {
+        res.status(405).send("You are not admin");
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  }
+};
+
+exports.makeadmin = async (req, res, next) => {
+  const loggedInUserId = req.user.id;
+  const groupId = req.params.id;
+  const userIdToMakeAdmin = req.body.userId;
+  console.log(loggedInUserId, groupId, userIdToMakeAdmin);
+  const usergroup = await userGroup.findOne({
+    where: {
+      userId: userIdToMakeAdmin,
+      groupId: groupId,
+    },
+  });
+  usergroup.isadmin = true;
+  await usergroup.save();
+  next();
 };

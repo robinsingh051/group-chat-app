@@ -5,8 +5,23 @@ const authenticationMiddleware = require("../util/authentication");
 
 const router = express.Router();
 
-// /groups/adduser => POST
-router.post("/:id/adduser", authenticationMiddleware, groupController.addUser);
+// /groups/:id/user => POST
+router.post("/:id/user", authenticationMiddleware, groupController.addUser);
+
+// /groups/:id/user => DELETE
+router.delete(
+  "/:id/user",
+  authenticationMiddleware,
+  groupController.deleteUser
+);
+
+// /groups/:id/makeadmin => PATCH
+router.patch(
+  "/:id/makeadmin",
+  authenticationMiddleware,
+  groupController.makeadmin,
+  groupController.getUsers
+);
 
 // /groups/addgroup => POST
 router.post("/addgroup", authenticationMiddleware, groupController.addGroup);
