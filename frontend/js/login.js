@@ -20,7 +20,7 @@ async function onSubmit(e) {
   try {
     // post to backend using axios
     const response = await axios.post(
-      "http://localhost:3000/users/logIn",
+      "http://localhost:4000/users/logIn",
       userDetails
     );
     console.log(response.data);

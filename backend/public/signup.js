@@ -23,7 +23,7 @@ async function onSubmit(e) {
   try {
     // post to backend using axios
     const response = await axios.post(
-      "http://localhost:3000/users/signUp",
+      "http://localhost:4000/users/signUp",
       newDetails
     );
     console.log(response.data);

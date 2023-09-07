@@ -33,7 +33,7 @@ router.get("/:id/users", authenticationMiddleware, groupController.getUsers);
 router.get("/all", authenticationMiddleware, groupController.getGroups);
 
 // /groups/:id/msgs => GET
-router.get("/:id/msgs", authenticationMiddleware, groupController.getAllMsgs);
+// router.get("/:id/msgs", authenticationMiddleware, groupController.getAllMsgs);
 
 // /groups/:id/msgs => POST
 router.post("/:id/msgs", authenticationMiddleware, groupController.postmsg);

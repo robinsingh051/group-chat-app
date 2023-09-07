@@ -4,6 +4,45 @@ const Group = require("../models/group");
 const userGroup = require("../models/userGroup");
 const sequelize = require("../util/database");
 const Sequelize = require("sequelize");
+const { Op } = require("sequelize");
+
+const io = require("socket.io")(5000, {
+  cors: {
+    origin: "http://localhost:4000",
+    methods: ["GET", "POST"],
+  },
+});
+
+io.on("connection", (socket) => {
+  socket.on("getMessages", async (groupId) => {
+    try {
+      const messages = await Msg.findAll({
+        attributes: ["id", "msg", "createdAt"], // Select only the desired columns
+        include: [
+          {
+            model: User,
+            attributes: ["name"], // Include the username
+          },
+        ],
+        where: {
+          groupId: groupId,
+        },
+        order: [["createdAt"]], // Order by createdAt in descending order
+      });
+
+      // Format the response
+      const formattedMessages = messages.map((message) => ({
+        id: message.id,
+        name: message.user.name,
+        msg: message.msg,
+        createdAt: message.createdAt,
+      }));
+      io.emit("messages", formattedMessages);
+    } catch (err) {
+      console.error(err);
+    }
+  });
+});
 
 exports.addUser = async (req, res, next) => {
   const userId = req.user.id;
@@ -91,48 +130,48 @@ exports.getGroups = async (req, res, next) => {
         },
       ],
     });
-    console.log(groups);
+    //console.log(groups);
     res.status(200).json(groups);
   } catch (err) {
     res.status(500).json({ err: "Not able to find user" });
   }
 };
 
-exports.getAllMsgs = async (req, res, next) => {
-  try {
-    const groupId = req.params.id;
-    const lastMessageId = req.query.lastMessageId; // Get the lastMessageId from the query parameters
-    const messages = await Msg.findAll({
-      attributes: ["id", "msg", "createdAt"], // Select only the desired columns
-      include: [
-        {
-          model: User,
-          attributes: ["name"], // Include the username
-        },
-      ],
-      where: {
-        groupId: groupId,
-        id: { [Sequelize.Op.gte]: lastMessageId }, // Filter messages by ID
-      },
-      order: [["createdAt"]], // Order by createdAt in descending order
-    });
+// exports.getAllMsgs = async (req, res, next) => {
+//   try {
+//     const groupId = req.params.id;
+//     const lastMessageId = req.query.lastMessageId; // Get the lastMessageId from the query parameters
+//     const messages = await Msg.findAll({
+//       attributes: ["id", "msg", "createdAt"], // Select only the desired columns
+//       include: [
+//         {
+//           model: User,
+//           attributes: ["name"], // Include the username
+//         },
+//       ],
+//       where: {
+//         groupId: groupId,
+//         id: { [Sequelize.Op.gte]: lastMessageId }, // Filter messages by ID
+//       },
+//       order: [["createdAt"]], // Order by createdAt in descending order
+//     });
 
-    // Format the response
-    const formattedMessages = messages.map((message) => ({
-      id: message.id,
-      name: message.user.name,
-      msg: message.msg,
-      createdAt: message.createdAt,
-    }));
+//     // Format the response
+//     const formattedMessages = messages.map((message) => ({
+//       id: message.id,
+//       name: message.user.name,
+//       msg: message.msg,
+//       createdAt: message.createdAt,
+//     }));
 
-    //console.log(formattedMessages);
+//     //console.log(formattedMessages);
 
-    res.status(200).json(formattedMessages);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Some error occurred" });
-  }
-};
+//     res.status(200).json(formattedMessages);
+//   } catch (err) {
+//     console.error(err);
+//     return res.status(500).json({ error: "Some error occurred" });
+//   }
+// };
 
 exports.postmsg = async (req, res, next) => {
   const userId = req.user.id;

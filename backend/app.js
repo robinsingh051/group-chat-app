@@ -57,7 +57,7 @@ sequelize
   .sync()
   .then(() => {
     // Start the server
-    app.listen(process.env.PORT || 3000);
+    app.listen(process.env.PORT || 4000);
   })
   .catch((error) => {
     console.error(error);
